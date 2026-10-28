@@ -1,10 +1,10 @@
 services:
+  # Python Web Service hosting both API & compiled Frontend
   - type: web
-    name: academic-scheduler-backend
-    env: python
-    rootDir: backend
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    name: academic-resource-scheduler
+    runtime: python
+    buildCommand: "cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     disk:
       name: scheduler-data
       mountPath: /data
@@ -12,31 +12,11 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: NODE_VERSION
+        value: 20.12.0
       - key: DATA_DIR
         value: /data
       - key: DATABASE_URL
         value: sqlite:////data/app.db
       - key: SECRET_KEY
         generateValue: true
-      - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: academic-scheduler-frontend
-          property: url
-
-  - type: web
-    name: academic-scheduler-frontend
-    env: static
-    rootDir: frontend
-    buildCommand: "npm ci && npm run build"
-    staticPublishPath: "./dist"
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_PROXY_TARGET
-        fromService:
-          type: web
-          name: academic-scheduler-backend
-          property: url
